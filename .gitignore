@@ -8,3 +8,5 @@ build
 devel
 
 profile.tmp
+.DS_Store
+.idea/
