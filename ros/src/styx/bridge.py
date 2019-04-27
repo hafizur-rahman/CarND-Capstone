@@ -183,8 +183,10 @@ class Bridge(object):
         self.image_count += 1
         if (self.image_count % IMAGE_THROTTLE_FACTOR) == 0:
             imgString = data["image"]
+
             image = PIL_Image.open(BytesIO(base64.b64decode(imgString)))
-            image_array = np.asarray(image)
+            image = image.convert("RGB")
+            image_array = np.array(image)
 
             image_message = self.bridge.cv2_to_imgmsg(image_array, encoding="rgb8")
             self.publishers['image'].publish(image_message)
