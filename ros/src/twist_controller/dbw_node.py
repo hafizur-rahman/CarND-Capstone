@@ -46,7 +46,7 @@ class DBWNode(object):
         max_lat_accel = rospy.get_param('~max_lat_accel', 3.)
         max_steer_angle = rospy.get_param('~max_steer_angle', 8.)
 
-        max_speed = rospy.get_param('waypoint_loader/velocity', 40) / 3.6 # convert km/h to m/s
+        max_speed = rospy.get_param('waypoint_loader/velocity', 40) # kph
 
         self.steer_pub = rospy.Publisher('/vehicle/steering_cmd',
                                          SteeringCmd, queue_size=1)
@@ -60,12 +60,12 @@ class DBWNode(object):
         self.twist_cmd = None
 
         # Create `Controller` object
-        self.controller = Controller(vehicle_mass, fuel_capacity, brake_deadband, decel_limit,
+        self.controller = Controller(max_speed, vehicle_mass, fuel_capacity, brake_deadband, decel_limit,
             accel_limit, wheel_radius, wheel_base, steer_ratio, max_lat_accel,
             max_steer_angle)
 
         # Subscribe to all the topics you need to
-        rospy.Subscriber('/vehicle_dbw_enabled', Bool, self.dbw_enabled_cb)
+        rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_enabled_cb)
         rospy.Subscriber('/twist_cmd', TwistStamped, self.twist_cb)
         rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb)
 

@@ -1,4 +1,7 @@
 <?xml version="1.0"?>
 <launch>
-    <node pkg="tl_detector" type="tl_detector.py" name="tl_detector" output="screen" cwd="node"/>
+    <node pkg="tl_detector" type="tl_detector.py" name="tl_detector" output="screen" cwd="node">
+        <!-- https://drive.google.com/open?id=1UiCU6oJ7Lbld8lEQq52j9r3J0dtCIXN9 -->
+        <param name="model_path" value="$(find tl_detector)/light_classification/models/faster_rnn_resnet101_sim.pb" />
+    </node>
 </launch>

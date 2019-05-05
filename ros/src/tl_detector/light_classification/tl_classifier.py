@@ -18,34 +18,23 @@ from keras.layers import Conv2D, Flatten, Dense, MaxPooling2D, Dropout
 from keras import losses, optimizers, regularizers
 import h5py
 
-DETECTION_THRESHOLD = 0.5
+import rospy
 
+DETECTION_THRESHOLD = 0.8
 
 class TLClassifier(object):
-    def __init__(self):
+    def __init__(self, model_path):
         self.is_site = False
         self.model_type = 'tf'
 
-        # specify path to /models directory with respect to the absolute path of tl_classifier.py
-        model_dir = os.path.join(os.path.dirname(__file__), 'models')
-        if not os.path.exists(model_dir):
-            os.makedirs(model_dir)
-
         if self.model_type == 'tf':
-            # specify the model name based on the is_site flag state
-            if self.is_site:
-                file_name = 'ssd_real.pb'
-            else:
-                file_name = 'ssd_sim.pb'
-
-            # full path to the model file
-            frozen_graph_file = os.path.join(model_dir, file_name)
-
             # Import tensorflow graph
             self.detection_graph = tf.Graph()
+
             with self.detection_graph.as_default():
                 od_graph_def = tf.GraphDef()
-                with tf.gfile.GFile(frozen_graph_file, 'rb') as fid:
+
+                with tf.gfile.GFile(model_path, 'rb') as fid:
                     serialized_graph = fid.read()
                     od_graph_def.ParseFromString(serialized_graph)
                     tf.import_graph_def(od_graph_def, name='')
@@ -55,16 +44,10 @@ class TLClassifier(object):
                 self.d_boxes = self.detection_graph.get_tensor_by_name('detection_boxes:0')
                 self.d_scores = self.detection_graph.get_tensor_by_name('detection_scores:0')
                 self.d_classes = self.detection_graph.get_tensor_by_name('detection_classes:0')
-                self.num_d = self.detection_graph.get_tensor_by_name('num_detections:0')
 
             self.sess = tf.Session(graph=self.detection_graph)
         elif self.model_type == 'keras':
-            if self.is_site:
-                file_name = 'keras_real.h5'
-            else:
-                file_name = 'keras_sim.h5'
-
-            self.model = load_model(os.path.join(model_dir, file_name))
+            self.model = load_model(model_path)
 
     def get_classification(self, image):
         """Determines the color of the traffic light in the image
@@ -90,36 +73,32 @@ class TLClassifier(object):
             # BGR to RGB conversion
             image = image[:, :, ::-1]
 
-            img = Image.fromarray(image.astype('uint8'), 'RGB')
-            # size = 640, 480
-            # img.thumbnail(size, Image.ANTIALIAS)
             # Expand dimension since the model expects image to have shape [1, None, None, 3].
-            img_expanded = np.expand_dims(img, axis=0)
+            img_expanded = np.expand_dims(image, axis=0)  
+
             # run classifier
             (scores, classes) = self.sess.run(
                 [self.d_scores, self.d_classes],
                 feed_dict={self.image_tensor: img_expanded})
 
             # find the top score for a given image frame
-            top_score = np.amax(np.squeeze(scores))
+            idx = np.argmax(np.squeeze(scores))
+            top_score = np.squeeze(scores)[idx]
 
             elapsed_time = time.time() - tic
-            sys.stderr.write("Debug: Time spent on classification=%.2f sec\n" % (elapsed_time))
+            rospy.loginfo("Time spent on classification=%.2f sec" % (elapsed_time))
 
             # figure out traffic light class based on the top score
             if top_score > DETECTION_THRESHOLD:
-                tl_state = int(np.squeeze(classes)[0])
-                if tl_state == 1:
-                    sys.stderr.write("Debug: Traffic state: RED, score=%.2f\n" % (top_score * 100))
+                tl_state = int(np.squeeze(classes)[idx])
+                
+                if tl_state == 1:                    
                     return TrafficLight.RED
-                elif tl_state == 2:
-                    sys.stderr.write("Debug: Traffic state: YELLOW, score=%.2f\n" % (top_score * 100))
+                elif tl_state == 2:                    
                     return TrafficLight.YELLOW
                 else:
-                    sys.stderr.write("Debug: Traffic state: GREEN, score=%.2f\n" % (top_score * 100))
                     return TrafficLight.GREEN
-            else:
-                sys.stderr.write("Debug: Traffic state: OFF\n")
+            else:       
                 return TrafficLight.UNKNOWN
 
     def run_keras_classifier(self, image):

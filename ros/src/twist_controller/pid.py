@@ -11,34 +11,24 @@ class PID(object):
         self.min = mn
         self.max = mx
 
-        # Controller state
-        self.reset()
+        self.int_val = self.last_error = 0.
 
-    def reset(self):        
-        self.t = None
-        self.last_error = 0.0
-        self.integral = 0.0
+    def reset(self):
+        self.int_val = 0.0
 
-    def step(self, target, current, t):
-        # PID controller requires delta t and derivative of error. 
-        # i.e. at least one timestep must have elapsed.
-        if self.t == None:
-            self.t = t
-            return 0.0
+    def step(self, error, sample_time):
 
-        delta_t = t - self.t
+        integral = self.int_val + error * sample_time
+        derivative = (error - self.last_error) / sample_time
 
-        # calculate error
-        error = target - current
+        val = self.kp * error + self.ki * integral + self.kd * derivative
 
-        integral = self.integral + error * delta_t
-        integral = max(MIN_NUM, min(MAX_NUM, integral)) # do clamping
-        derivative = (error - self.last_error) / delta_t
-
-        control = self.kp * error + self.ki * integral + self.kd * derivative
-        control = max(self.min, min(self.max, control)) # do clamping
-
-        self.integral = integral
+        if val > self.max:
+            val = self.max
+        elif val < self.min:
+            val = self.min
+        else:
+            self.int_val = integral
         self.last_error = error
 
-        return control
+        return val

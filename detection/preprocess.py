@@ -1,7 +1,9 @@
 """
 Usage:
 
-# Data downloaded from: https://drive.google.com/file/d/0B-Eiyn-CUQtxdUZWMkFfQzdObUE/view
+# Data downloaded from:
+# https://drive.google.com/file/d/0B-Eiyn-CUQtxdUZWMkFfQzdObUE/view
+# https://1drv.ms/u/s!AtMG4jW974a6m8B-Q0A3tc2JbCigPw
 
 # Create train/test data:
 
@@ -15,10 +17,42 @@ import glob
 import pandas as pd
 import argparse
 import yaml
+import sys
 
 from sklearn.model_selection import train_test_split
 
-def to_df(inputFile):
+def txt2df(inputFile):
+    class_ids = [
+        'Red', 'Yellow','Green'
+    ]
+
+    with open(inputFile, "r+") as f:
+        items = []
+
+        for line in f:
+            # 'image-file-basename classno 1 boundingbox-xmin ymin width height'
+            # 0/1521230383.77.png 0 2 35 99 84 170 393 103 78 175
+            data = line.split()
+
+            file_name=data[0]
+            class_id=class_ids[int(data[1])]
+            bboxes=int(data[2])
+
+            for i in range(bboxes):
+                xmin = int(data[i*4 + 3])
+                ymin = int(data[i*4 + 4])
+                width = int(data[i*4 + 5])
+                height = int(data[i*4 + 6])
+                xmax = xmin + width
+                ymax = ymin + height
+
+                items.append((file_name, width, height, class_id, xmin, ymin, xmax, ymax))            
+
+        column_name = ['filename', 'width', 'height', 'class', 'xmin', 'ymin', 'xmax', 'ymax']
+        df = pd.DataFrame(items, columns=column_name)
+    return df
+
+def yml2df(inputFile):
     with open(inputFile, "r+") as f:
         data = yaml.safe_load(f)
 
@@ -53,24 +87,34 @@ def main():
                         "--ratio",
                         help="train/test split ration",
                         type=float,
-                        default=0.2)
+                        default=0.0)
     args = parser.parse_args()
 
     assert(os.path.isfile(args.inputFile))
     assert(os.path.isdir(args.outputPath))
 
-    df = to_df(args.inputFile)
+    if args.inputFile.endswith(".txt"):
+        df = txt2df(args.inputFile)
+    elif args.inputFile.endswith(".yml"):
+        df = yml2df(args.inputFile)
+    else:
+        print('Unrecognized format: {}'.format(args.inputFile))
+        sys.exit(-1)
+
+    # Shuffle Pandas data frame
+    import sklearn.utils
+    df = sklearn.utils.shuffle(df)
 
     train, test = train_test_split(df, test_size=args.ratio)
 
     train_labels = os.path.join(args.outputPath, 'train_labels.csv')
-    test_labels = os.path.join(args.outputPath, 'test_labels.csv')
-    
     train.to_csv(train_labels, index=None)
     print('Train labels saved at: {}'.format(train_labels))
 
-    test.to_csv(test_labels, index=None)
-    print('Test labels saved at: {}'.format(test_labels))
+    if len(test):
+        test_labels = os.path.join(args.outputPath, 'test_labels.csv')
+        test.to_csv(test_labels, index=None)
+        print('Test labels saved at: {}'.format(test_labels))
 
 if __name__ == '__main__':
     main()
