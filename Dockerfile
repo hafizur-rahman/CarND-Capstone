@@ -16,7 +16,7 @@ RUN apt-get upgrade -y
 # end installing Dataspeed DBW
 
 # install python packages
-RUN apt-get install -y python-pip
+RUN apt-get install -y python-pip libjpeg-dev
 COPY requirements.txt ./requirements.txt
 RUN pip install -r requirements.txt
 RUN pip install pillow --upgrade
@@ -27,6 +27,9 @@ RUN apt-get install -y ros-$ROS_DISTRO-pcl-ros
 RUN apt-get install -y ros-$ROS_DISTRO-image-proc
 
 # socket io
+ADD libdns-export162_9.10.3.dfsg.P4-8_amd64.deb /
+ADD libisc-export160_9.10.3.dfsg.P4-8ubuntu1.14_amd64.deb /
+RUN dpkg -i libdns-export162_9.10.3.dfsg.P4-8_amd64.deb libisc-export160_9.10.3.dfsg.P4-8ubuntu1.14_amd64.deb
 RUN apt-get install -y netbase
 
 RUN mkdir /capstone
