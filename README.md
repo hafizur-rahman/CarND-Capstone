@@ -72,3 +72,13 @@ cd CarND-Capstone/ros
 roslaunch launch/site.launch
 ```
 5. Confirm that traffic light detection works on real life images
+
+### Submission
+##### Team Lead
+Hafizur Rahman - bibagimon@gmail.com
+
+##### Team Members
+Nathan Byun - jbyun6@gmail.com
+Ryo Takaki - takaki.ryou@gmail.com
+Freedom Challis - freedomtrain7@gmail.com
+Henry Gridley - gridley.h@husky.neu.edu

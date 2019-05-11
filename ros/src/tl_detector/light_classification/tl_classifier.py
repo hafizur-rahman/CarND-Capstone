@@ -11,7 +11,6 @@ import glob
 import re
 import cv2
 import numpy as np
-from sklearn.model_selection import train_test_split
 from keras.utils.np_utils import to_categorical
 from keras.models import Sequential, load_model
 from keras.layers import Conv2D, Flatten, Dense, MaxPooling2D, Dropout
