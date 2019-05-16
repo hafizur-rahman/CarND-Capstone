@@ -70,7 +70,7 @@ class TLDetector(object):
         self.config = yaml.load(config_string)
         self.stop_line_positions = self.config['stop_line_positions']
 
-        self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Light, queue_size=1)
+        self.upcoming_red_light_pub = rospy.Publisher('/traffic_light_forward', Light, queue_size=1)
 
         rospy.spin()
 
@@ -88,7 +88,7 @@ class TLDetector(object):
 
     def image_cb(self, msg):
         """Identifies red lights in the incoming camera image and publishes the index
-            of the waypoint closest to the red light's stop line to /traffic_waypoint
+            of the waypoint closest to the red light's stop line to /traffic_light_forward
 
         Args:
             msg (Image): image from car-mounted camera
