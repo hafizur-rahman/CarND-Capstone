@@ -41,6 +41,7 @@ class TLDetector(object):
         self.stop_line_indices = []
 
         self.process_count = 0
+        self.has_image = False
 
         self.bridge = CvBridge()
 
